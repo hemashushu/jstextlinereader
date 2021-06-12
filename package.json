@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/hemashushu/jstextlinereader#readme",
   "devDependencies": {
+    "jsobjectutils": "github:hemashushu/jsobjectutils",
     "mocha": "^8.4.0"
   },
   "dependencies": {

@@ -19,24 +19,35 @@ const TextLine = require('./textline');
  * - selectionInfo: SelectionInfo // 文本被选中的情况，如果文本内容为空字符串，或者选择（textSelection）范围
  *   超出文本，则它的值为 undefined.
  *
- * ## SelectionInfo 提供的属性：
+ *   SelectionInfo 提供的属性：
+ *   - startLineIndex: int // 开始行的行索引（索引包括）
+ *   - endLineIndex: int // 结束行的行索引（索引包括）
+ *   - startPositionOfSelectedLines: int // 选中行的字符起始位置（相对整篇文本），（索引包括）
+ *   - endPositionOfSelectedLinesint: int // 选中行的字符结束位置（相对整篇文本），（索引不包括）
+ *   - selectionStartRelativeToStartLine: int // 光标的起始位置相对开始行的偏移值（索引包括）
+ *   - selectionEndRelativeToEndLine: int // 光标的结束位置相对结束行的偏移值（索引不包括）
  *
- * - startLineIndex: int // 开始行的行索引（索引包括）
- * - endLineIndex: int // 结束行的行索引（索引包括）
- * - startPositionOfSelectedLines: int // 选中行的字符起始位置（相对整篇文本），（索引包括）
- * - endPositionOfSelectedLinesint: int // 选中行的字符结束位置（相对整篇文本），（索引不包括）
- * - selectionStartRelativeToStartLine: int // 光标的起始位置相对开始行的偏移值（索引包括）
- * - selectionEndRelativeToEndLine: int // 光标的结束位置相对结束行的偏移值（索引不包括）
+ *   各个属性的作用：
+ *   - startLineIndex 和 endLineIndex 表示被选中的行（所谓被选中的行，是指光标
+ *     选择范围所涉及的行）。
+ *   - startPositionOfSelectedLines 和 endPositionOfSelectedLines 表示
+ *     选中的行的文字开始及结束位置
+ *   - selectionStartRelativeToStartLine 和 selectionEndRelativeToEndLine 表示
+ *     选中的行当中，选中的文字的相对开始和相对结束位置。
  *
- * ### 各个属性的作用
+ * ## 实例的方法
  *
- * - startLineIndex 和 endLineIndex 表示被选中的行（所谓被选中的行，是指光标
- *   选择范围所涉及的行）。
- * - startPositionOfSelectedLines 和 endPositionOfSelectedLines 表示
- *   选中的行的文字开始及结束位置
- * - selectionStartRelativeToStartLine 和 selectionEndRelativeToEndLine 表示
- *   选中的行当中，选中的文字的相对开始和相对结束位置。
+ * - getTextLine(idx)：获取 TextLine
+ * - getAllTextLines()：获取全文 TextLine
+ * - getSelectedTextLines()：获取选中的 TextLine
+ * - getCurrentTextLine()：获取 TextLine
+ * - readTextLine()：读取当前光标所在的 TextLine，并指向下一行
  *
+ * ## 静态方法
+ * getLineTextSelections(textContent): 获取每一行的范围（TextSelection）
+ * getSelectionInfo(lineTextSelections, textSelection)：获取选中信息，即 SelectionInfo 对象
+ * getTextLineByIndex(textContent, lineTextSelections, idx)：获取 TextLine
+ * getTextLineByTextSelection(textContent, lineTextSelection)：获取 TextLine
  */
 class TextLineReader {
 
@@ -63,7 +74,14 @@ class TextLineReader {
     }
 
     /**
-     * 获取文本的每一行的起始和结束位置，即 TextSelection 对象
+     * 获取文本的每一行的起始和结束位置（即 TextSelection 对象）的数组
+     *
+     * 如果行末包含换行符（\n），则结束位置为换行符之后的位置。比如：
+     *  0 1 2 3 ¶ 4 5 6  <-- text
+     * 0 1 2 3 4 5 6 7 8 <-- position
+     *
+     * 则第一个 TextSelection 的值是 {0, 5} （5 为换行符后的位置）
+     * 第二个 TextSelection 的值是 {5, 8}
      *
      * @param {*} textContent 返回 TextSelection 数组 [TextSelection, ...]
      *     如果文本内容为空字符串（''），则返回空数组。
@@ -236,25 +254,47 @@ class TextLineReader {
             endLineIndex,
             startPositionOfSelectedLines,
             endPositionOfSelectedLines,
-            selectionEndRelativeToEndLine,
-            selectionStartRelativeToStartLine
+            selectionStartRelativeToStartLine,
+            selectionEndRelativeToEndLine
         );
     }
 
+    /**
+     *
+     * @param {*} textContent
+     * @param {*} lineTextSelections
+     * @param {*} idx
+     * @returns 返回 TextLine
+     */
     static getTextLineByIndex(textContent, lineTextSelections, idx) {
         let lineTextSelection = lineTextSelections[idx];
         return TextLineReader.getTextLineByTextSelection(textContent, lineTextSelection);
     }
 
+    /**
+     *
+     * @param {*} textContent
+     * @param {*} lineTextSelection
+     * @returns 返回 TextLine
+     */
     static getTextLineByTextSelection(textContent, lineTextSelection) {
         let text = textContent.substring(lineTextSelection.start, lineTextSelection.end);
         return new TextLine(lineTextSelection.start, text);
     }
 
+    /**
+     *
+     * @param {*} idx
+     * @returns 返回 TextLine
+     */
     getTextLine(idx) {
         return TextLineReader.getTextLineByIndex(this.textContent, this.lineTextSelections, idx);
     }
 
+    /**
+     *
+     * @returns 返回 [TextLine,...]
+     */
     getAllTextLines() {
         let textLines = [];
 
@@ -265,6 +305,10 @@ class TextLineReader {
         return textLines;
     }
 
+    /**
+     *
+     * @returns 返回 [TextLine,...]
+     */
     getSelectedTextLines() {
         let selectedTextLines = [];
 
