@@ -16,7 +16,7 @@ const TextLine = require('./textline');
  * - lineTextSelections: [Selection, ...] // 每一行的起始和结束位置
  * - lineCount: int // 行数
  *
- * - selectedLineIndexies: [int, ...] // 被选中的行的索引，如果选择范围（textSelection）超出文本，则为 undefined
+ * - selectedLineIndexes: [int, ...] // 被选中的行的索引，如果选择范围（textSelection）超出文本，则为 undefined
  * - isMultipleLines: boolean // 是否选中了多行文本
  * - isCollapsed: boolean // 光标是否折叠了，即 textSelection 的 start 是否和 end 的值相等。
  * - selectionInfo: SelectionInfo // 文本被选中的情况，如果文本内容为空字符串，或者选择（textSelection）范围
@@ -66,17 +66,17 @@ class TextLineReader {
         this.selectionInfo = TextLineReader.getSelectionInfo(this.lineTextSelections, textSelection);
 
         if (this.selectionInfo === undefined) {
-            this.selectedLineIndexies = undefined;
+            this.selectedLineIndexes = undefined;
             this.isMultipleLines = false;
 
         }else {
-            // selectedLineIndexies 是一个类似 Array (Array-alink) 对象，
+            // selectedLineIndexes 是一个类似 Array (Array-alink) 对象，
             // 可迭代，可索引访问元素。
-            this.selectedLineIndexies = NumberRange.buildIndexedNumberRange(
+            this.selectedLineIndexes = NumberRange.buildIndexedNumberRange(
                 this.selectionInfo.startLineIndex,
                 this.selectionInfo.endLineIndex + 1
             );
-            this.isMultipleLines = (this.selectedLineIndexies.length > 1);
+            this.isMultipleLines = (this.selectedLineIndexes.length > 1);
         }
 
         this.isCollapsed = TextSelection.isCollapsed(this.textSelection);
@@ -320,12 +320,12 @@ class TextLineReader {
             throw new UnsupportedOperationException('The text selection contains multiple lines.');
         }
 
-        if (this.selectedLineIndexies === undefined) {
+        if (this.selectedLineIndexes === undefined) {
             // 选择范围超出文本。
             return undefined;
         }
 
-        let idx = this.selectedLineIndexies[0];
+        let idx = this.selectedLineIndexes[0];
         return this.getTextLine(idx);
     }
 
@@ -334,13 +334,13 @@ class TextLineReader {
      * @returns 返回 [TextLine,...]，如果选中范围超出文本范围，则返回 undefined
      */
     getSelectedTextLines() {
-        if (this.selectedLineIndexies === undefined) {
+        if (this.selectedLineIndexes === undefined) {
             return;
         }
 
         let selectedTextLines = [];
 
-        for (let idx of this.selectedLineIndexies) {
+        for (let idx of this.selectedLineIndexes) {
             selectedTextLines.push(this.getTextLine(idx));
         }
 
@@ -376,12 +376,12 @@ class TextLineReader {
             throw new UnsupportedOperationException('The text selection contains multiple lines.');
         }
 
-        if (this.selectedLineIndexies === undefined) {
+        if (this.selectedLineIndexes === undefined) {
             // 选择范围超出文本。
             return undefined;
         }
 
-        let idx = this.selectedLineIndexies[0];
+        let idx = this.selectedLineIndexes[0];
         let to = this.lineCount;
 
         return {

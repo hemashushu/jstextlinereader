@@ -202,7 +202,7 @@ describe('TextLineReader Test', () => {
         let textContent1 = '0123\n6789\nabcde';
         let textLineReader1 = new TextLineReader(textContent1, new TextSelection(2, 7));
         assert.equal(textLineReader1.lineCount, 3);
-        assert(ObjectUtils.arrayEquals(Array.from(textLineReader1.selectedLineIndexies), [0, 1]));
+        assert(ObjectUtils.arrayEquals(Array.from(textLineReader1.selectedLineIndexes), [0, 1]));
         assert(textLineReader1.isMultipleLines);
         assert(!textLineReader1.isCollapsed);
 
@@ -220,7 +220,7 @@ describe('TextLineReader Test', () => {
 
         let textLineReader2 = new TextLineReader(textContent1, new TextSelection(6, 8));
         assert.equal(textLineReader2.lineCount, 3);
-        assert(ObjectUtils.arrayEquals(Array.from(textLineReader2.selectedLineIndexies), [1]));
+        assert(ObjectUtils.arrayEquals(Array.from(textLineReader2.selectedLineIndexes), [1]));
         assert(!textLineReader2.isMultipleLines);
         assert(!textLineReader2.isCollapsed);
 
@@ -247,7 +247,7 @@ describe('TextLineReader Test', () => {
             new TextSelection(0)));
 
         assert.equal(textLineReader1.lineCount, 1);
-        assert(ObjectUtils.arrayEquals(Array.from(textLineReader1.selectedLineIndexies), [0]));
+        assert(ObjectUtils.arrayEquals(Array.from(textLineReader1.selectedLineIndexes), [0]));
         assert(!textLineReader1.isMultipleLines);
         assert(textLineReader1.isCollapsed);
 
