@@ -1,4 +1,4 @@
-const { IllegalArgumentException, UnsupportedOperationException } = require('jsexception');
+const { IllegalArgumentException } = require('jsexception');
 const { TextSelection } = require('jstextselection');
 const { NumberRange } = require('jsobjectutils');
 
@@ -17,7 +17,7 @@ const TextLine = require('./textline');
  * - lineCount: int // 行数
  *
  * - selectedLineIndexes: [int, ...] // 被选中的行的索引，如果选择范围（textSelection）超出文本，则为 undefined
- * - selectedLineIndex: 被选中的行的索引，（仅选中的为单一行时该属性才有效，否则值为 undefined），如果选择
+ * - selectedLineIndex: 被选中的行的索引（如果选中了多行，则返回第一行的索引值），如果选择
  *   范围超出文本，则为 undefined
  * - isMultipleLines: boolean // 是否选中了多行文本
  * - isCollapsed: boolean // 光标是否折叠了，即 textSelection 的 start 是否和 end 的值相等。
@@ -44,7 +44,7 @@ const TextLine = require('./textline');
  *
  * - getTextLine(idx)：获取 TextLine
  * - getTextLines(fromIdx, toIdx)：获取指定范围的 TextLine 集合
- * - getSelectedTextLine(): 获取当前选中的行（仅选中的为单一行时该方法才有效）
+ * - getSelectedTextLine(): 获取当前选中的行（如果选中了多行，则返回第一行的值）
  * - getSelectedTextLines()：获取选中的 TextLine 的集合
  * - getAllTextLines()：获取全文 TextLine
  * - readTextLine()：从当前光标所在的 TextLine 开始读取，使用返回对象的 nextTextLine() 读取下一行
@@ -80,13 +80,8 @@ class TextLineReader {
                 this.selectionInfo.endLineIndex + 1
             );
 
+            this.selectedLineIndex = this.selectionInfo.startLineIndex;
             this.isMultipleLines = (this.selectedLineIndexes.length > 1);
-
-            if (this.isMultipleLines) {
-                this.selectedLineIndex = undefined;
-            }else {
-                this.selectedLineIndex = this.selectionInfo.startLineIndex;
-            }
         }
 
         this.isCollapsed = TextSelection.isCollapsed(this.textSelection);
@@ -321,15 +316,11 @@ class TextLineReader {
     /**
      * 获取当前选中行的信息
      *
-     * - 只有所选文本的行数为单行时才允许这个操作。
+     * - 如果选中了多行，则返回选中的第一行。
      *
      * @returns 返回 TextLine, 如果选中范围超出文本范围，则返回 undefined。
      */
     getSelectedTextLine() {
-        if (this.isMultipleLines) {
-            throw new UnsupportedOperationException('The text selection contains multiple lines.');
-        }
-
         if (this.selectedLineIndexes === undefined) {
             // 选择范围超出文本。
             return undefined;
@@ -374,7 +365,7 @@ class TextLineReader {
     /**
      * 从当前选中行开始读取，使用返回对象的 nextTextLine() 方法读取下一行，直到文本的最后一行。
      *
-     * - 只有所选文本的行数为单行时才允许这个操作。
+     * - 如果选中了多行，则从选中的第一行开始读取
      *
      * @returns 返回一个带有 nextTextLine() 方法的对象。
      *     - 选择范围超出文本，则返回 undefined
@@ -382,10 +373,6 @@ class TextLineReader {
      *     文本的最后一行，如果继续调用 nextTextLine()，则返回 null。
      */
     readTextLine() {
-        if (this.isMultipleLines) {
-            throw new UnsupportedOperationException('The text selection contains multiple lines.');
-        }
-
         if (this.selectedLineIndexes === undefined) {
             // 选择范围超出文本。
             return undefined;

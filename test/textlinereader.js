@@ -202,7 +202,7 @@ describe('TextLineReader Test', () => {
         let textContent1 = '0123\n6789\nabcde';
         let textLineReader1 = new TextLineReader(textContent1, new TextSelection(2, 7));
         assert.equal(textLineReader1.lineCount, 3);
-        assert(textLineReader1.selectedLineIndex === undefined);
+        assert.equal(textLineReader1.selectedLineIndex, 0);
         assert(ObjectUtils.arrayEquals(Array.from(textLineReader1.selectedLineIndexes), [0, 1]));
         assert(textLineReader1.isMultipleLines);
         assert(!textLineReader1.isCollapsed);
@@ -218,6 +218,9 @@ describe('TextLineReader Test', () => {
             new TextLine(0, '0123\n'),
             new TextLine(5, '6789\n')
         ]));
+        assert(ObjectUtils.objectEquals(textLineReader1.getSelectedTextLine(),
+            new TextLine(0, '0123\n')
+        ));
 
         let textLineReader2 = new TextLineReader(textContent1, new TextSelection(6, 8));
         assert.equal(textLineReader2.lineCount, 3);
