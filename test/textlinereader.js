@@ -202,7 +202,7 @@ describe('TextLineReader Test', () => {
         let textContent1 = '0123\n6789\nabcde';
         let textLineReader1 = new TextLineReader(textContent1, new TextSelection(2, 7));
         assert.equal(textLineReader1.lineCount, 3);
-        assert(ObjectUtils.arrayEquals(textLineReader1.selectedLineIndexes, [0, 1]));
+        assert(ObjectUtils.arrayEquals(Array.from(textLineReader1.selectedLineIndexies), [0, 1]));
         assert(textLineReader1.isMultipleLines);
         assert(!textLineReader1.isCollapsed);
 
@@ -220,19 +220,51 @@ describe('TextLineReader Test', () => {
 
         let textLineReader2 = new TextLineReader(textContent1, new TextSelection(6, 8));
         assert.equal(textLineReader2.lineCount, 3);
-        assert(ObjectUtils.arrayEquals(textLineReader2.selectedLineIndexes, [1]));
+        assert(ObjectUtils.arrayEquals(Array.from(textLineReader2.selectedLineIndexies), [1]));
         assert(!textLineReader2.isMultipleLines);
         assert(!textLineReader2.isCollapsed);
 
-        assert(ObjectUtils.objectEquals(textLineReader2.getCurrentTextLine(),
+        assert(ObjectUtils.objectEquals(textLineReader2.getSelectedTextLine(),
             new TextLine(5, '6789\n')));
 
-        assert(ObjectUtils.objectEquals(textLineReader2.readTextLine(),
+        let lineIterator = textLineReader2.readTextLine();
+        assert(lineIterator !== undefined && lineIterator !== null);
+
+        assert(ObjectUtils.objectEquals(lineIterator.nextTextLine(),
             new TextLine(5, '6789\n')));
 
-        assert(ObjectUtils.objectEquals(textLineReader2.readTextLine(),
+        assert(ObjectUtils.objectEquals(lineIterator.nextTextLine(),
             new TextLine(10, 'abcde')));
 
-        assert(textLineReader2.readTextLine() === null);
+        assert(lineIterator.nextTextLine() === null);
+    });
+
+    it('Test empty text', ()=>{
+        let textLineReader1 = new TextLineReader('', new TextSelection(0));
+
+        assert.equal(textLineReader1.lineTextSelections.length, 1);
+        assert(ObjectUtils.objectEquals(textLineReader1.lineTextSelections[0],
+            new TextSelection(0)));
+
+        assert.equal(textLineReader1.lineCount, 1);
+        assert(ObjectUtils.arrayEquals(Array.from(textLineReader1.selectedLineIndexies), [0]));
+        assert(!textLineReader1.isMultipleLines);
+        assert(textLineReader1.isCollapsed);
+
+        assert(ObjectUtils.objectEquals(
+            textLineReader1.selectionInfo,
+            new SelectionInfo(0,0,0,0,0,0)));
+
+        assert(ObjectUtils.objectEquals(textLineReader1.getTextLine(0),
+            new TextLine(0, '')));
+        assert(ObjectUtils.arrayEquals(textLineReader1.getAllTextLines(), [
+            new TextLine(0, '')
+        ]));
+
+        assert(ObjectUtils.objectEquals(textLineReader1.getSelectedTextLine(),
+            new TextLine(0, '')));
+        assert(ObjectUtils.arrayEquals(textLineReader1.getSelectedTextLines(), [
+            new TextLine(0, '')
+        ]));
     });
 });

@@ -1,5 +1,6 @@
 const { IllegalArgumentException, UnsupportedOperationException } = require('jsexception');
 const { TextSelection } = require('jstextselection');
+const { NumberRange } = require('jsobjectutils');
 
 const SelectionInfo = require('./selectioninfo');
 const TextLine = require('./textline');
@@ -8,12 +9,14 @@ const TextLine = require('./textline');
  *
  * 用于按行读取文本内容的模块
  *
+ * 空字符串被视为一行内容为空字符串的 TextLine。
+ *
  * ## TextLineReader 提供的属性:
  *
  * - lineTextSelections: [Selection, ...] // 每一行的起始和结束位置
  * - lineCount: int // 行数
  *
- * - selectedLineIndexes: [int, ...] // 被选中的行的索引，如果选择范围（textSelection）超出文本，则为空数组
+ * - selectedLineIndexies: [int, ...] // 被选中的行的索引，如果选择范围（textSelection）超出文本，则为 undefined
  * - isMultipleLines: boolean // 是否选中了多行文本
  * - isCollapsed: boolean // 光标是否折叠了，即 textSelection 的 start 是否和 end 的值相等。
  * - selectionInfo: SelectionInfo // 文本被选中的情况，如果文本内容为空字符串，或者选择（textSelection）范围
@@ -38,12 +41,14 @@ const TextLine = require('./textline');
  * ## 实例的方法
  *
  * - getTextLine(idx)：获取 TextLine
+ * - getTextLines(fromIdx, toIdx)：获取指定范围的 TextLine 集合
+ * - getSelectedTextLine(): 获取当前选中的行（仅选中的为单一行时该方法才有效）
+ * - getSelectedTextLines()：获取选中的 TextLine 的集合
  * - getAllTextLines()：获取全文 TextLine
- * - getSelectedTextLines()：获取选中的 TextLine
- * - getCurrentTextLine()：获取 TextLine
- * - readTextLine()：读取当前光标所在的 TextLine，并指向下一行
+ * - readTextLine()：从当前光标所在的 TextLine 开始读取，使用返回对象的 nextTextLine() 读取下一行
  *
  * ## 静态方法
+ *
  * getLineTextSelections(textContent): 获取每一行的范围（TextSelection）
  * getSelectionInfo(lineTextSelections, textSelection)：获取选中信息，即 SelectionInfo 对象
  * getTextLineByIndex(textContent, lineTextSelections, idx)：获取 TextLine
@@ -59,17 +64,21 @@ class TextLineReader {
         this.lineCount = this.lineTextSelections.length;
 
         this.selectionInfo = TextLineReader.getSelectionInfo(this.lineTextSelections, textSelection);
-        this.selectedLineIndexes = [];
 
-        if (this.selectionInfo !== undefined) {
-            for (let idx = this.selectionInfo.startLineIndex;
-                idx <= this.selectionInfo.endLineIndex;
-                idx++) {
-                this.selectedLineIndexes.push(idx);
-            }
+        if (this.selectionInfo === undefined) {
+            this.selectedLineIndexies = undefined;
+            this.isMultipleLines = false;
+
+        }else {
+            // selectedLineIndexies 是一个类似 Array (Array-alink) 对象，
+            // 可迭代，可索引访问元素。
+            this.selectedLineIndexies = NumberRange.buildIndexedNumberRange(
+                this.selectionInfo.startLineIndex,
+                this.selectionInfo.endLineIndex + 1
+            );
+            this.isMultipleLines = (this.selectedLineIndexies.length > 1);
         }
 
-        this.isMultipleLines = (this.selectedLineIndexes.length > 1);
         this.isCollapsed = TextSelection.isCollapsed(this.textSelection);
     }
 
@@ -84,7 +93,7 @@ class TextLineReader {
      * 第二个 TextSelection 的值是 {5, 8}
      *
      * @param {*} textContent 返回 TextSelection 数组 [TextSelection, ...]
-     *     如果文本内容为空字符串（''），则返回空数组。
+     *     如果文本内容为空字符串（''），则返回 [{start: 0, end: 0}]。
      */
     static getLineTextSelections(textContent) {
         if (textContent === undefined ||
@@ -93,7 +102,7 @@ class TextLineReader {
         }
 
         if (textContent === '') {
-            return [];
+            return [new TextSelection(0)];
         }
 
         // getLineTextSelections 能够正确处理 Chromium/Electron 的 contenteditable 编辑框的
@@ -158,16 +167,9 @@ class TextLineReader {
      *
      * @param {*} lineTextSelections
      * @param {*} textSelection 返回 SelectionInfo。
-     *     - 如果 lineTextSelections 为空数组，即原始文本内容为空
-     *       字符串，则返回 undefined。
-     *     - 如果 textSelection 超出文本（长度）范围，也同样会
-     *       返回 undefined.
+     *     - 如果 textSelection 超出文本（长度）范围则返回 undefined.
      */
     static getSelectionInfo(lineTextSelections, textSelection) {
-        if (lineTextSelections.length === 0) {
-            return;
-        }
-
         let textContentLength = lineTextSelections[lineTextSelections.length - 1].end;
 
         // 开始行的行索引（索引包括）
@@ -292,6 +294,60 @@ class TextLineReader {
     }
 
     /**
+     * 获取指定范围的 TextLine 集合
+     * @param {*} fromIdx 开始行索引
+     * @param {*} endIdx 结束行索引（索引不包括）
+     * @returns
+     */
+    getTextLines(fromIdx, endIdx) {
+        let textLines = [];
+        for(let idx=fromIdx; idx<endIdx; idx++){
+            let textLine = this.getTextLine(idx);
+            textLines.push(textLine);
+        }
+        return textLines;
+    }
+
+    /**
+     * 获取当前选中行的信息
+     *
+     * - 只有所选文本的行数为单行时才允许这个操作。
+     *
+     * @returns 返回 TextLine, 如果选中范围超出文本范围，则返回 undefined。
+     */
+    getSelectedTextLine() {
+        if (this.isMultipleLines) {
+            throw new UnsupportedOperationException('The text selection contains multiple lines.');
+        }
+
+        if (this.selectedLineIndexies === undefined) {
+            // 选择范围超出文本。
+            return undefined;
+        }
+
+        let idx = this.selectedLineIndexies[0];
+        return this.getTextLine(idx);
+    }
+
+    /**
+     *
+     * @returns 返回 [TextLine,...]，如果选中范围超出文本范围，则返回 undefined
+     */
+    getSelectedTextLines() {
+        if (this.selectedLineIndexies === undefined) {
+            return;
+        }
+
+        let selectedTextLines = [];
+
+        for (let idx of this.selectedLineIndexies) {
+            selectedTextLines.push(this.getTextLine(idx));
+        }
+
+        return selectedTextLines;
+    }
+
+    /**
      *
      * @returns 返回 [TextLine,...]
      */
@@ -306,76 +362,39 @@ class TextLineReader {
     }
 
     /**
-     *
-     * @returns 返回 [TextLine,...]
-     */
-    getSelectedTextLines() {
-        let selectedTextLines = [];
-
-        for (let idx of this.selectedLineIndexes) {
-            selectedTextLines.push(this.getTextLine(idx));
-        }
-
-        return selectedTextLines;
-    }
-
-    /**
-     * 获取当前选中行的信息
+     * 从当前选中行开始读取，使用返回对象的 nextTextLine() 方法读取下一行，直到文本的最后一行。
      *
      * - 只有所选文本的行数为单行时才允许这个操作。
      *
-     * @returns 返回 TextLine, 如果到达了选中文本的最后一行，则返回 null。
-     */
-    getCurrentTextLine() {
-        if (this.isMultipleLines) {
-            throw new UnsupportedOperationException('The text selection contains multiple lines.');
-        }
-
-        if (this.selectedLineIndexes.length === 0) {
-            // 文本内容为空，或者选择范围超出文本。
-            return null;
-        }
-
-        let idx = this.selectedLineIndexes[0];
-        if (idx === this.lineTextSelections.length) {
-            // 到达了选中文本的最后一行
-            return null;
-        }
-
-        return this.getTextLine(idx);
-    }
-
-    /**
-     * 读取当前选中行的信息，并将选中的行的索引值递增。
-     *
-     * - 只有所选文本的行数为单行时才允许这个操作。
-     * - 会改变所选中的行的索引值，即这个方法有副作用。
-     *
-     * @returns 返回 TextLine，如果已经到文本的末尾，则返回 null。
+     * @returns 返回一个带有 nextTextLine() 方法的对象。
+     *     - 选择范围超出文本，则返回 undefined
+     *     nextTextLine() 方法每次调用都会返回一个 TextLine 对象，并指向下一行，直到
+     *     文本的最后一行，如果继续调用 nextTextLine()，则返回 null。
      */
     readTextLine() {
         if (this.isMultipleLines) {
             throw new UnsupportedOperationException('The text selection contains multiple lines.');
         }
 
-        if (this.selectedLineIndexes.length === 0) {
-            // 文本内容为空，或者选择范围超出文本。
-            return null;
+        if (this.selectedLineIndexies === undefined) {
+            // 选择范围超出文本。
+            return undefined;
         }
 
-        let idx = this.selectedLineIndexes[0];
+        let idx = this.selectedLineIndexies[0];
+        let to = this.lineCount;
 
-        if (idx === this.lineTextSelections.length) {
-            // 到达了选中文本的最后一行
-            return null;
-        }
-
-        let textLine = this.getTextLine(idx);
-
-        idx++;
-        this.selectedLineIndexes[0] = idx;
-
-        return textLine;
+        return {
+            nextTextLine: () => {
+                if (idx >= to) {
+                    return null;
+                }else {
+                    let value = idx;
+                    idx++;
+                    return this.getTextLine(value);
+                }
+            }
+        };
     }
 }
 

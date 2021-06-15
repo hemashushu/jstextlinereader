@@ -1,31 +1,31 @@
 {
-  "name": "jstextlinereader",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "mocha"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hemashushu/jstextlinereader.git"
-  },
-  "keywords": [
-    "text",
-    "editor"
-  ],
-  "author": "Hippo Spark <hippospark@gmail.com> (https://twitter.com/hemashushu)",
-  "license": "SEE LICENSE IN <LICENSE.md>",
-  "bugs": {
-    "url": "https://github.com/hemashushu/jstextlinereader/issues"
-  },
-  "homepage": "https://github.com/hemashushu/jstextlinereader#readme",
-  "devDependencies": {
-    "jsobjectutils": "github:hemashushu/jsobjectutils",
-    "mocha": "^8.4.0"
-  },
-  "dependencies": {
-    "jsexception": "github:hemashushu/jsexception",
-    "jstextselection": "github:hemashushu/jstextselection"
-  }
+    "name": "jstextlinereader",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "mocha"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/hemashushu/jstextlinereader.git"
+    },
+    "keywords": [
+        "text",
+        "editor"
+    ],
+    "author": "Hippo Spark <hippospark@gmail.com> (https://twitter.com/hemashushu)",
+    "license": "SEE LICENSE IN <LICENSE.md>",
+    "bugs": {
+        "url": "https://github.com/hemashushu/jstextlinereader/issues"
+    },
+    "homepage": "https://github.com/hemashushu/jstextlinereader#readme",
+    "devDependencies": {
+        "mocha": "^8.4.0"
+    },
+    "dependencies": {
+        "jsexception": "github:hemashushu/jsexception",
+        "jsobjectutils": "github:hemashushu/jsobjectutils",
+        "jstextselection": "github:hemashushu/jstextselection"
+    }
 }
