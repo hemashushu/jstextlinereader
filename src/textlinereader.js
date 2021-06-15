@@ -17,6 +17,8 @@ const TextLine = require('./textline');
  * - lineCount: int // 行数
  *
  * - selectedLineIndexes: [int, ...] // 被选中的行的索引，如果选择范围（textSelection）超出文本，则为 undefined
+ * - selectedLineIndex: 被选中的行的索引，（仅选中的为单一行时该属性才有效，否则值为 undefined），如果选择
+ *   范围超出文本，则为 undefined
  * - isMultipleLines: boolean // 是否选中了多行文本
  * - isCollapsed: boolean // 光标是否折叠了，即 textSelection 的 start 是否和 end 的值相等。
  * - selectionInfo: SelectionInfo // 文本被选中的情况，如果文本内容为空字符串，或者选择（textSelection）范围
@@ -67,6 +69,7 @@ class TextLineReader {
 
         if (this.selectionInfo === undefined) {
             this.selectedLineIndexes = undefined;
+            this.selectedLineIndex = undefined;
             this.isMultipleLines = false;
 
         }else {
@@ -76,7 +79,14 @@ class TextLineReader {
                 this.selectionInfo.startLineIndex,
                 this.selectionInfo.endLineIndex + 1
             );
+
             this.isMultipleLines = (this.selectedLineIndexes.length > 1);
+
+            if (this.isMultipleLines) {
+                this.selectedLineIndex = undefined;
+            }else {
+                this.selectedLineIndex = this.selectionInfo.startLineIndex;
+            }
         }
 
         this.isCollapsed = TextSelection.isCollapsed(this.textSelection);
@@ -325,7 +335,7 @@ class TextLineReader {
             return undefined;
         }
 
-        let idx = this.selectedLineIndexes[0];
+        let idx = this.selectedLineIndex;
         return this.getTextLine(idx);
     }
 
@@ -381,7 +391,7 @@ class TextLineReader {
             return undefined;
         }
 
-        let idx = this.selectedLineIndexes[0];
+        let idx = this.selectedLineIndex;
         let to = this.lineCount;
 
         return {
